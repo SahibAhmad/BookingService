@@ -1,3 +1,5 @@
+const {StatusCodes} = require('http-status-codes');
+
 class ValidationError extends Error {
     constructor(error) {
         let explanation = []; // we can build this as we know how sequelize gives validation error
