@@ -26,9 +26,11 @@ class BookingRepository {
 
     async update(bookingId, newData) {
         try {
-            
+
             const booking = await Booking.findByPk(bookingId);
             booking.status = newData.status;
+            booking.noOfSeats = 0;
+            booking.totalCost = 0;
             await booking.save();
             return booking;
 
