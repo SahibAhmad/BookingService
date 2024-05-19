@@ -1,20 +1,37 @@
 const axios = require('axios').default;
 const { BookingRepository } = require('../repository/index.js');
-const { FLIGHT_SERVICE_PATH } = require('../config/serverConfig.js')
+const { FLIGHT_SERVICE_PATH , AUTH_SERVICE_PATH ,REMINDER_BINDING_KEY } = require('../config/serverConfig.js')
 const { ServiceError } = require('../utils/errors/index.js');
+const {createChannel, publishMessage} = require('../utils/messageQueue.js');
 
 const bookingRepository = new BookingRepository();
 
 class BookingService {
+    async sendToQueue(emailData,serviceToken) 
+    {
+         const channel = await createChannel();
+         const data = {
+         message : emailData,
+         service : serviceToken,
+    };
+ 
+  
+      await publishMessage(channel,REMINDER_BINDING_KEY,JSON.stringify(data));let message 
+    }
 
+    //flightId, 
     async createBooking(data) {
         try {
             const flightId = data.flightId;
+            
 
             let getFlightRequestUrl = `${FLIGHT_SERVICE_PATH}/api/v1/flights/${flightId}`;
+            
 
             const response = await axios.get(getFlightRequestUrl);
             const flightData = response.data.data;
+            
+            
 
             let priceOfTheFlight = flightData.price;
 
@@ -31,9 +48,46 @@ class BookingService {
 
             const updateFlightRequestUrl = `${FLIGHT_SERVICE_PATH}/api/v1/flights/${flightId}`;
 
+
             await axios.patch(updateFlightRequestUrl, { totalSeats: flightData.totalSeats - booking.noOfSeats });
 
             const finalBooking = await bookingRepository.update(booking.id, { status: "booked" });
+
+
+
+
+            const userDetailsFetchUrl = `${AUTH_SERVICE_PATH}/api/v1/user`;
+
+            
+           
+            const userDetails = await axios({
+                method: 'get',
+                url: userDetailsFetchUrl,
+                data: {
+                    id: bookingPayload.userId
+                }
+            });
+
+            const email = userDetails.data.data.email;
+           
+            const emailDataImmediate = {
+                subject: "booking succesfull",
+                content: "Your booking has been successfull",
+                recepientEmail: "sahibprojects998@gmail.com", //actually here should be email fetched above
+
+            }
+            await this.sendToQueue(emailDataImmediate,"SEND_BASIC_EMAIL");
+
+            const emailDataBeforeDeparture = {
+                subject : "Boarding Reminder",
+                content: "This is demo reminder for your flight",
+                recepientEmail: "sahibprojects998@gmail.com", //again here we should use email (but they were just dummy invalid emails)
+                notificationTime : "2024-05-18 19:00:07",
+            }
+
+            await this.sendToQueue(emailDataBeforeDeparture, "CREATE_TICKET")
+
+
 
 
             return finalBooking;

@@ -11,8 +11,16 @@ const  sendMessageToQueue = async (req,res) => {
   try {
     
       const channel = await createChannel();
-      const data = {message :"Success"};
-    //   console.log(data);
+      const data = {
+        message : {
+            subject: "message queue demo",
+            content: "This is simple demo for message queue implementation",
+            recepientEmail: "sahibprojects998@gmail.com",
+            notificationTime : "2024-05-18 19:00:07",
+        },
+        service : "CREATE_TICKET",
+    };
+ 
   
       await publishMessage(channel,REMINDER_BINDING_KEY,JSON.stringify(data));
   
@@ -32,6 +40,7 @@ const create = async (req,res) => {
     try {
         
         const response = await bookingService.createBooking(req.body);
+        
         return res.status(StatusCodes.OK).json({
             message: "Successfully Completed Booking",
             success: true,
